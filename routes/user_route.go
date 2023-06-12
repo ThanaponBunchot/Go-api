@@ -7,5 +7,7 @@ import (
 
 func UserRoute(app *fiber.App) {
 	//All routes related to users comes here
-	app.Post("/user", controllers.CreateUser) //add this
+	app.Post("/user", controllers.CreateUser)      //add this
+	app.Get("/user/:userId", controllers.GetAUser) //add this
+	app.Post("/userByDew", controllers.CreateUserByDew)
 }

@@ -2,12 +2,13 @@ package controllers
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/ThanaponBunchot/demo-go-fiber/configs"
 	"github.com/ThanaponBunchot/demo-go-fiber/models"
-	"github.com/ThanaponBunchot/demo-go-fiber/response"
+	responses "github.com/ThanaponBunchot/demo-go-fiber/response"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -35,7 +36,7 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	newUser := models.User{
-		Id:       primitive.NewObjectID(),
+		// Id:       primitive.NewObjectID(),
 		Name:     user.Name,
 		Location: user.Location,
 		Title:    user.Title,
@@ -47,6 +48,36 @@ func CreateUser(c *fiber.Ctx) error {
 	}
 
 	return c.Status(http.StatusCreated).JSON(responses.UserResponse{Status: http.StatusCreated, Message: "success", Data: &fiber.Map{"data": result}})
+}
+
+func CreateUserByDew(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	log.Println("ctx:", ctx)
+	var user models.User
+	defer cancel()
+
+	//validate the request body
+	if err := c.BodyParser(&user); err != nil {
+		return c.Status(http.StatusBadRequest).JSON(responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: &fiber.Map{"data": err.Error()}})
+	}
+
+	//use the validator lib to validate required field
+	if validationErr := validate.Struct(&user); validationErr != nil {
+		return c.Status(http.StatusBadRequest).JSON(responses.UserResponse{Status: http.StatusBadRequest, Message: "error", Data: &fiber.Map{"data": validationErr.Error()}})
+	}
+
+	newUser := models.User{
+		Name:     user.Name,
+		Location: user.Location,
+		Title:    user.Title,
+	}
+
+	result, err := userCollection.InsertOne(ctx, newUser)
+	log.Println("result>", result)
+	if err != nil {
+		return c.JSON(err)
+	}
+	return c.Status(http.StatusCreated).JSON(result)
 }
 
 func GetAUser(c *fiber.Ctx) error {
